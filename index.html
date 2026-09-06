@@ -18,6 +18,8 @@
   <div id="result"></div>
 
   <script>
+    var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec';
+
     var resultDiv = document.getElementById('result');
     var scanning = true;
 
@@ -25,7 +27,7 @@
       if (!scanning) return;
       scanning = false;
 
-      fetch('?id=' + encodeURIComponent(decodedText))
+      fetch(BACKEND_URL + '?id=' + encodeURIComponent(decodedText))
         .then(function(res) { return res.json(); })
         .then(function(data) {
           if (data.status === 'ok') {
