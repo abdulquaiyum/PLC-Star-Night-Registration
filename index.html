@@ -23,13 +23,46 @@
     var resultDiv = document.getElementById('result');
     var scanning = true;
 
+    // JSONP request - avoids the browser's CORS block that a normal fetch() hits
+    // when calling script.google.com from a different site (github.io).
+    function jsonpRequest(url, onSuccess, onError) {
+      var callbackName = 'jsonp_cb_' + Math.round(Math.random() * 1000000);
+      var timeoutId;
+
+      window[callbackName] = function(data) {
+        cleanup();
+        onSuccess(data);
+      };
+
+      function cleanup() {
+        clearTimeout(timeoutId);
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+
+      var script = document.createElement('script');
+      script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+      script.onerror = function() {
+        cleanup();
+        onError();
+      };
+
+      // safety timeout in case the request hangs silently
+      timeoutId = setTimeout(function() {
+        cleanup();
+        onError();
+      }, 8000);
+
+      document.body.appendChild(script);
+    }
+
     function onScanSuccess(decodedText) {
       if (!scanning) return;
       scanning = false;
 
-      fetch(BACKEND_URL + '?id=' + encodeURIComponent(decodedText))
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
+      jsonpRequest(
+        BACKEND_URL + '?id=' + encodeURIComponent(decodedText),
+        function(data) {
           if (data.status === 'ok') {
             resultDiv.className = 'ok';
             resultDiv.innerText = 'Welcome, ' + data.name + '!';
@@ -41,12 +74,13 @@
             resultDiv.innerText = 'ID not found: ' + decodedText;
           }
           setTimeout(function() { resultDiv.innerText = ''; scanning = true; }, 2500);
-        })
-        .catch(function() {
+        },
+        function() {
           resultDiv.className = 'err';
           resultDiv.innerText = 'Network error - try again';
           setTimeout(function() { resultDiv.innerText = ''; scanning = true; }, 2000);
-        });
+        }
+      );
     }
 
     var qr = new Html5Qrcode('reader');
