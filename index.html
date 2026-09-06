@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>PLC Star Night Check-In</title>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
-    body { font-family: sans-serif; text-align: center; margin: 0; padding: 20px; background: #1a0f3d; color: white; }
-    #reader { width: 100%; max-width: 400px; margin: 0 auto; }
-    #result { font-size: 24px; margin-top: 20px; padding: 20px; border-radius: 12px; min-height: 30px; }
-    .ok { background: #1f9d55; }
-    .dup { background: #b7791f; }
-    .err { background: #c53030; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; margin: 0; padding: 20px; background: #1a0f3d; color: white; }
+    h2 { color: gold; margin-bottom: 15px; }
+    #reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 2px solid #3c2475; }
+    #result { font-size: 22px; font-weight: bold; margin-top: 20px; padding: 18px; border-radius: 12px; min-height: 30px; display: none; }
+    .ok { background: #1f9d55; display: block !important; }
+    .dup { background: #b7791f; display: block !important; }
+    .err { background: #c53030; display: block !important; }
   </style>
 </head>
 <body>
@@ -19,12 +22,10 @@
 
   <script>
     var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec';
-
     var resultDiv = document.getElementById('result');
     var scanning = true;
 
-    // JSONP request - avoids the browser's CORS block that a normal fetch() hits
-    // when calling script.google.com from a different site (github.io).
+    // JSONP request handler to bypass cross-origin restrictions from github.io
     function jsonpRequest(url, onSuccess, onError) {
       var callbackName = 'jsonp_cb_' + Math.round(Math.random() * 1000000);
       var timeoutId;
@@ -40,14 +41,16 @@
         if (script.parentNode) script.parentNode.removeChild(script);
       }
 
+      var separator = url.indexOf('?') >= 0 ? '&' : '?';
+      // Append cache-buster timestamp and callback
       var script = document.createElement('script');
-      script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+      script.src = url + separator + 'callback=' + callbackName + '&_t=' + new Date().getTime();
+      
       script.onerror = function() {
         cleanup();
         onError();
       };
 
-      // safety timeout in case the request hangs silently
       timeoutId = setTimeout(function() {
         cleanup();
         onError();
@@ -73,12 +76,20 @@
             resultDiv.className = 'err';
             resultDiv.innerText = 'ID not found: ' + decodedText;
           }
-          setTimeout(function() { resultDiv.innerText = ''; scanning = true; }, 2500);
+          setTimeout(function() { 
+            resultDiv.className = '';
+            resultDiv.style.display = 'none'; 
+            scanning = true; 
+          }, 2500);
         },
         function() {
           resultDiv.className = 'err';
           resultDiv.innerText = 'Network error - try again';
-          setTimeout(function() { resultDiv.innerText = ''; scanning = true; }, 2000);
+          setTimeout(function() { 
+            resultDiv.className = '';
+            resultDiv.style.display = 'none'; 
+            scanning = true; 
+          }, 2000);
         }
       );
     }
