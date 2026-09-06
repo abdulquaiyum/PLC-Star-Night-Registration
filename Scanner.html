@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin: 0; padding: 20px; background: #1a0f3d; color: white; }
+    #reader { width: 100%; max-width: 400px; margin: 0 auto; }
+    #result { font-size: 24px; margin-top: 20px; padding: 20px; border-radius: 12px; min-height: 30px; }
+    .ok { background: #1f9d55; }
+    .dup { background: #b7791f; }
+    .err { background: #c53030; }
+  </style>
+</head>
+<body>
+  <h2>PLC Star Night Check-In</h2>
+  <div id="reader"></div>
+  <div id="result"></div>
+
+  <script>
+    var resultDiv = document.getElementById('result');
+    var scanning = true;
+
+    function onScanSuccess(decodedText) {
+      if (!scanning) return;
+      scanning = false;
+
+      fetch('?id=' + encodeURIComponent(decodedText))
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.status === 'ok') {
+            resultDiv.className = 'ok';
+            resultDiv.innerText = 'Welcome, ' + data.name + '!';
+          } else if (data.status === 'duplicate') {
+            resultDiv.className = 'dup';
+            resultDiv.innerText = data.name + ' already checked in';
+          } else {
+            resultDiv.className = 'err';
+            resultDiv.innerText = 'ID not found: ' + decodedText;
+          }
+          setTimeout(function() { resultDiv.innerText = ''; scanning = true; }, 2500);
+        })
+        .catch(function() {
+          resultDiv.className = 'err';
+          resultDiv.innerText = 'Network error - try again';
+          setTimeout(function() { resultDiv.innerText = ''; scanning = true; }, 2000);
+        });
+    }
+
+    var qr = new Html5Qrcode('reader');
+    qr.start({ facingMode: 'environment' }, { fps: 10, qrbox: 250 }, onScanSuccess);
+  </script>
+</body>
+</html>
