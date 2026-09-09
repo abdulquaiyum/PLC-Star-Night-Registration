@@ -116,16 +116,30 @@
         card.className = 'card';
 
         var isChecked = item.status === 'Checked In';
-        
-        card.innerHTML = 
-          '<div class="card-info">' +
-            '<div class="card-title">' + item.name + '</div>' +
-            '<div class="card-sub">EPF: ' + item.id + '</div>' +
-          '</div>' +
-          '<button class="btn ' + (isChecked ? 'checked' : '') + '" onclick="doCheckIn(\'' + item.id + '\', this)">' +
-            (isChecked ? 'Checked In' : 'Check In') +
-          '</button>';
 
+        var cardInfo = document.createElement('div');
+        cardInfo.className = 'card-info';
+
+        var cardTitle = document.createElement('div');
+        cardTitle.className = 'card-title';
+        cardTitle.textContent = item.name || 'Unnamed Guest';
+
+        var cardSub = document.createElement('div');
+        cardSub.className = 'card-sub';
+        cardSub.textContent = 'EPF: ' + (item.id !== undefined && item.id !== '' ? item.id : 'N/A');
+
+        cardInfo.appendChild(cardTitle);
+        cardInfo.appendChild(cardSub);
+
+        var btn = document.createElement('button');
+        btn.className = 'btn ' + (isChecked ? 'checked' : '');
+        btn.textContent = isChecked ? 'Checked In' : 'Check In';
+        btn.onclick = function() {
+          doCheckIn(item.id, btn);
+        };
+
+        card.appendChild(cardInfo);
+        card.appendChild(btn);
         resultsDiv.appendChild(card);
       });
     }
