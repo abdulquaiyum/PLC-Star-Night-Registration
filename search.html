@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PLC Star Night - Manual Guest Search</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      background: #110826; 
+      color: #fff; 
+      margin: 0; 
+      padding: 20px; 
+    }
+    .container { max-width: 500px; margin: 0 auto; }
+    h2 { color: gold; text-align: center; margin-bottom: 20px; font-weight: 600; }
+    .search-box {
+      width: 100%;
+      padding: 16px;
+      font-size: 18px;
+      border: 2px solid #3b1d82;
+      border-radius: 12px;
+      background: #1f1140;
+      color: #fff;
+      outline: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .search-box:focus { border-color: gold; }
+    .results { margin-top: 15px; }
+    .card {
+      background: #1f1140;
+      border: 1px solid #3b1d82;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-info { flex: 1; padding-right: 10px; }
+    .card-title { font-weight: bold; font-size: 16px; color: #fff; }
+    .card-sub { font-size: 13px; color: #aaa; margin-top: 4px; }
+    .btn {
+      background: gold;
+      color: #110826;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      min-width: 100px;
+      text-align: center;
+      transition: background 0.2s;
+    }
+    .btn.checked {
+      background: #2e7d32;
+      color: #fff;
+      cursor: default;
+    }
+    #status-msg {
+      text-align: center;
+      margin-top: 15px;
+      font-weight: bold;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Manual Guest Search</h2>
+    <input type="text" id="searchInput" class="search-box" placeholder="Type EPF Number or Name..." autocomplete="off">
+    <div id="results" class="results"></div>
+    <div id="status-msg"></div>
+  </div>
+
+  <script>
+    var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec';
+    var searchInput = document.getElementById('searchInput');
+    var resultsDiv = document.getElementById('results');
+    var statusMsg = document.getElementById('status-msg');
+    var debounceTimer;
+
+    searchInput.addEventListener('input', function() {
+      clearTimeout(debounceTimer);
+      var q = searchInput.value.trim();
+      if (q.length < 2) {
+        resultsDiv.innerHTML = '';
+        statusMsg.innerText = '';
+        return;
+      }
+      debounceTimer = setTimeout(function() { fetchSuggestions(q); }, 300);
+    });
+
+    function fetchSuggestions(query) {
+      var callbackName = 'search_cb_' + Math.round(Math.random() * 1000000);
+      window[callbackName] = function(data) {
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        renderResults(data);
+      };
+
+      var script = document.createElement('script');
+      script.src = BACKEND_URL + '?mode=search&q=' + encodeURIComponent(query) + '&callback=' + callbackName;
+      document.body.appendChild(script);
+    }
+
+    function renderResults(data) {
+      resultsDiv.innerHTML = '';
+      if (!data || data.length === 0) {
+        resultsDiv.innerHTML = '<p style="text-align:center; color:#aaa; margin-top:20px;">No guests found.</p>';
+        return;
+      }
+
+      data.forEach(function(item) {
+        var card = document.createElement('div');
+        card.className = 'card';
+
+        var isChecked = item.status === 'Checked In';
+        
+        card.innerHTML = 
+          '<div class="card-info">' +
+            '<div class="card-title">' + item.name + '</div>' +
+            '<div class="card-sub">EPF: ' + item.id + '</div>' +
+          '</div>' +
+          '<button class="btn ' + (isChecked ? 'checked' : '') + '" onclick="doCheckIn(\'' + item.id + '\', this)">' +
+            (isChecked ? 'Checked In' : 'Check In') +
+          '</button>';
+
+        resultsDiv.appendChild(card);
+      });
+    }
+
+    function doCheckIn(id, btnObj) {
+      if (btnObj.classList.contains('checked')) return;
+      btnObj.innerText = 'Checking...';
+
+      var callbackName = 'checkin_cb_' + Math.round(Math.random() * 1000000);
+      window[callbackName] = function(res) {
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        if (res.status === 'ok' || res.status === 'duplicate') {
+          btnObj.innerText = 'Checked In';
+          btnObj.classList.add('checked');
+          statusMsg.style.color = '#4caf50';
+          statusMsg.innerText = 'Successfully checked in: ' + res.name;
+        } else {
+          btnObj.innerText = 'Retry';
+          statusMsg.style.color = '#ff5252';
+          statusMsg.innerText = 'Check-in failed. Please try again.';
+        }
+      };
+
+      var script = document.createElement('script');
+      script.src = BACKEND_URL + '?id=' + encodeURIComponent(id) + '&callback=' + callbackName;
+      document.body.appendChild(script);
+    }
+  </script>
+</body>
+</html>
