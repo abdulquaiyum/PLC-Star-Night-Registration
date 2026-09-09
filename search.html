@@ -68,7 +68,7 @@
 <body>
   <div class="container">
     <h2>Manual Guest Search</h2>
-    <input type="text" id="searchInput" class="search-box" placeholder="Type EPF Number or Name..." autocomplete="off">
+    <input type="text" id="searchInput" class="search-box" placeholder="Type EMP No, Name, or Invitee ID..." autocomplete="off">
     <div id="results" class="results"></div>
     <div id="status-msg"></div>
   </div>
@@ -126,7 +126,7 @@
 
         var cardSub = document.createElement('div');
         cardSub.className = 'card-sub';
-        cardSub.textContent = 'EPF: ' + (item.id !== undefined && item.id !== '' ? item.id : 'N/A');
+        cardSub.textContent = 'EMP No: ' + (item.id !== undefined && item.id !== '' ? item.id : 'N/A');
 
         cardInfo.appendChild(cardTitle);
         cardInfo.appendChild(cardSub);
