@@ -12,10 +12,10 @@
     input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
     button { width: 100%; padding: 14px; background: #0056b3; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
     button:disabled { background: #aaa; }
-    #result { margin-top: 15px; font-weight: bold; font-size: 15px; padding: 10px; border-radius: 6px; }
-    .success { background: #d4edda; color: #155724; }
-    .error { background: #f8d7da; color: #721c24; }
-    .info { background: #cce5ff; color: #004085; }
+    #result { margin-top: 15px; font-weight: bold; font-size: 15px; padding: 10px; border-radius: 6px; display: none; }
+    .success { background: #d4edda; color: #155724; display: block !important; }
+    .error { background: #f8d7da; color: #721c24; display: block !important; }
+    .info { background: #cce5ff; color: #004085; display: block !important; }
   </style>
 </head>
 <body>
@@ -32,10 +32,8 @@
 </div>
 
 <script>
-  // STEP 1: Paste your published Web App URL here!
-  const SCRIPT_URL = "YOUR_DEPLOYED_WEB_APP_URL_HERE";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec";
 
-  let html5QrcodeScanner;
   let isProcessing = false;
 
   function showStatus(text, type) {
@@ -44,22 +42,21 @@
     resDiv.innerText = text;
   }
 
-  // JSONP helper function to handle Apps Script cross-domain requests reliably
-  function fetchJSONP(url, callbackName) {
+  function fetchJSONP(url) {
     return new Promise((resolve, reject) => {
+      const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
       const script = document.createElement('script');
-      const name = callbackName || 'jsonp_cb_' + Math.round(100000 * Math.random());
       
-      window[name] = function(data) {
-        delete window[name];
-        document.body.removeChild(script);
+      window[callbackName] = function(data) {
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
         resolve(data);
       };
 
-      script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + name;
+      script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
       script.onerror = function() {
-        delete window[name];
-        document.body.removeChild(script);
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
         reject(new Error("Network / Script Error"));
       };
 
@@ -71,7 +68,6 @@
     if (isProcessing) return;
     isProcessing = true;
 
-    // Clean input and encode URL parameters properly
     const cleanedQuery = String(queryStr).trim();
     showStatus("Searching for: " + cleanedQuery + "...", "info");
 
@@ -131,9 +127,13 @@
     searchGuest(decodedText);
   }
 
-  // Initialize camera scanner
+  // Automatically request rear camera on mobile devices
   window.onload = function() {
-    html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+    const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+      fps: 10, 
+      qrbox: 250,
+      facingMode: "environment"
+    });
     html5QrcodeScanner.render(onScanSuccess);
   };
 </script>
