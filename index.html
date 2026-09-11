@@ -62,7 +62,6 @@
       backdrop-filter: blur(12px);
     }
 
-    /* Clean Camera Wrapper */
     .scanner-wrapper {
       position: relative;
       width: 100%;
@@ -77,7 +76,7 @@
       width: 100%;
     }
 
-    /* Hide Html5Qrcode junk elements */
+    /* Hide default camera select dropdowns and buttons */
     #reader__dashboard, 
     #reader__status_span, 
     #reader__camera_selection,
@@ -200,12 +199,10 @@
   </div>
 
   <div class="container">
-    <!-- Clean Camera Frame -->
     <div class="scanner-wrapper">
       <div id="reader"></div>
     </div>
 
-    <!-- Manual Search -->
     <div class="search-box">
       <input 
         type="text" 
@@ -218,8 +215,6 @@
     </div>
 
     <div id="statusToast" class="status-toast"></div>
-
-    <!-- Search Results List -->
     <div id="resultsList" class="results-container"></div>
   </div>
 
@@ -291,7 +286,7 @@
 
         if (res.status === "success") {
           showToast(`Successfully Checked In: ${guestName}`, true);
-          executeSearch(); // Refresh list status
+          executeSearch();
         } else {
           showToast("Check-in failed: " + res.message, false);
         }
@@ -326,7 +321,6 @@
       document.body.appendChild(scriptSearch);
     }
 
-    // Initialize Auto Scanner without dashboard chrome
     const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
       fps: 10, 
       qrbox: { width: 220, height: 220 },
