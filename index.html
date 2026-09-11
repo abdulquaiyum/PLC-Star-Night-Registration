@@ -1,101 +1,142 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>PLC Star Night Check-In</title>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PLC Event Check-In Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; margin: 0; padding: 20px; background: #1a0f3d; color: white; }
-    h2 { color: gold; margin-bottom: 15px; }
-    #reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 2px solid #3c2475; }
-    #result { font-size: 22px; font-weight: bold; margin-top: 20px; padding: 18px; border-radius: 12px; min-height: 30px; display: none; }
-    .ok { background: #1f9d55; display: block !important; }
-    .dup { background: #b7791f; display: block !important; }
-    .err { background: #c53030; display: block !important; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 16px; background: #f4f6f9; display: flex; flex-direction: column; align-items: center; }
+    .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); width: 100%; max-width: 420px; box-sizing: border-box; text-align: center; }
+    #reader { width: 100%; border-radius: 8px; overflow: hidden; }
+    input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
+    button { width: 100%; padding: 14px; background: #0056b3; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    button:disabled { background: #aaa; }
+    #result { margin-top: 15px; font-weight: bold; font-size: 15px; padding: 10px; border-radius: 6px; }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+    .info { background: #cce5ff; color: #004085; }
   </style>
 </head>
 <body>
-  <h2>PLC Star Night Check-In</h2>
+
+<div class="card">
+  <h2>PLC Check-In Scanner</h2>
   <div id="reader"></div>
+  
+  <p style="margin-top: 15px; font-size: 14px; color: #666;">Or enter ID / EPF manually:</p>
+  <input type="text" id="manualInput" placeholder="e.g. PLC-SN-137 or 137" />
+  <button id="searchBtn" onclick="manualSearch()">Search Guest</button>
+
   <div id="result"></div>
+</div>
 
-  <script>
-    var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec';
-    var resultDiv = document.getElementById('result');
-    var scanning = true;
+<script>
+  // STEP 1: Paste your published Web App URL here!
+  const SCRIPT_URL = "YOUR_DEPLOYED_WEB_APP_URL_HERE";
 
-    // JSONP request handler to bypass cross-origin restrictions from github.io
-    function jsonpRequest(url, onSuccess, onError) {
-      var callbackName = 'jsonp_cb_' + Math.round(Math.random() * 1000000);
-      var timeoutId;
+  let html5QrcodeScanner;
+  let isProcessing = false;
 
-      window[callbackName] = function(data) {
-        cleanup();
-        onSuccess(data);
-      };
+  function showStatus(text, type) {
+    const resDiv = document.getElementById("result");
+    resDiv.className = type;
+    resDiv.innerText = text;
+  }
 
-      function cleanup() {
-        clearTimeout(timeoutId);
-        delete window[callbackName];
-        if (script.parentNode) script.parentNode.removeChild(script);
-      }
-
-      var separator = url.indexOf('?') >= 0 ? '&' : '?';
-      // Append cache-buster timestamp and callback
-      var script = document.createElement('script');
-      script.src = url + separator + 'callback=' + callbackName + '&_t=' + new Date().getTime();
+  // JSONP helper function to handle Apps Script cross-domain requests reliably
+  function fetchJSONP(url, callbackName) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      const name = callbackName || 'jsonp_cb_' + Math.round(100000 * Math.random());
       
-      script.onerror = function() {
-        cleanup();
-        onError();
+      window[name] = function(data) {
+        delete window[name];
+        document.body.removeChild(script);
+        resolve(data);
       };
 
-      timeoutId = setTimeout(function() {
-        cleanup();
-        onError();
-      }, 8000);
+      script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + name;
+      script.onerror = function() {
+        delete window[name];
+        document.body.removeChild(script);
+        reject(new Error("Network / Script Error"));
+      };
 
       document.body.appendChild(script);
-    }
+    });
+  }
 
-    function onScanSuccess(decodedText) {
-      if (!scanning) return;
-      scanning = false;
+  function searchGuest(queryStr) {
+    if (isProcessing) return;
+    isProcessing = true;
 
-      jsonpRequest(
-        BACKEND_URL + '?id=' + encodeURIComponent(decodedText),
-        function(data) {
-          if (data.status === 'ok') {
-            resultDiv.className = 'ok';
-            resultDiv.innerText = 'Welcome, ' + data.name + '!';
-          } else if (data.status === 'duplicate') {
-            resultDiv.className = 'dup';
-            resultDiv.innerText = data.name + ' already checked in';
+    // Clean input and encode URL parameters properly
+    const cleanedQuery = String(queryStr).trim();
+    showStatus("Searching for: " + cleanedQuery + "...", "info");
+
+    const searchUrl = `${SCRIPT_URL}?mode=search&query=${encodeURIComponent(cleanedQuery)}`;
+
+    fetchJSONP(searchUrl)
+      .then(res => {
+        isProcessing = false;
+        if (res.status === "success" && res.matches && res.matches.length > 0) {
+          const guest = res.matches[0];
+          
+          if (guest.status === "Checked-In") {
+            showStatus(`Already Checked-In: ${guest.name} (${guest.inviteeId})`, "error");
           } else {
-            resultDiv.className = 'err';
-            resultDiv.innerText = 'ID not found: ' + decodedText;
+            promptCheckIn(guest);
           }
-          setTimeout(function() { 
-            resultDiv.className = '';
-            resultDiv.style.display = 'none'; 
-            scanning = true; 
-          }, 2500);
-        },
-        function() {
-          resultDiv.className = 'err';
-          resultDiv.innerText = 'Network error - try again';
-          setTimeout(function() { 
-            resultDiv.className = '';
-            resultDiv.style.display = 'none'; 
-            scanning = true; 
-          }, 2000);
+        } else {
+          showStatus(`ID not found: "${cleanedQuery}"`, "error");
         }
-      );
+      })
+      .catch(err => {
+        isProcessing = false;
+        showStatus("Connection error. Check Apps Script URL deployment.", "error");
+        console.error(err);
+      });
+  }
+
+  function promptCheckIn(guest) {
+    const tokenNo = prompt(`Found: ${guest.name}\nInvitee ID: ${guest.inviteeId}\n\nEnter Voting Token # (Optional):`);
+    if (tokenNo === null) {
+      showStatus("Check-In cancelled.", "info");
+      return;
     }
 
-    var qr = new Html5Qrcode('reader');
-    qr.start({ facingMode: 'environment' }, { fps: 10, qrbox: 250 }, onScanSuccess);
-  </script>
+    showStatus(`Checking in ${guest.name}...`, "info");
+    const checkinUrl = `${SCRIPT_URL}?mode=checkin&id=${guest.rowIndex}&tokenNo=${encodeURIComponent(tokenNo)}`;
+
+    fetchJSONP(checkinUrl)
+      .then(res => {
+        if (res.status === "success") {
+          showStatus(`SUCCESS: ${res.name} Checked-In at ${res.time}!`, "success");
+        } else {
+          showStatus(`Check-In Failed: ${res.message}`, "error");
+        }
+      })
+      .catch(err => {
+        showStatus("Error recording check-in.", "error");
+      });
+  }
+
+  function manualSearch() {
+    const val = document.getElementById("manualInput").value;
+    if (val) searchGuest(val);
+  }
+
+  function onScanSuccess(decodedText) {
+    searchGuest(decodedText);
+  }
+
+  // Initialize camera scanner
+  window.onload = function() {
+    html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
+  };
+</script>
+
 </body>
 </html>
