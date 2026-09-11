@@ -74,7 +74,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      animation: fadeIn 0.5s ease-out;
+      animation: fadeIn 0.4s ease-out;
     }
 
     .welcome-text {
@@ -96,8 +96,15 @@
       text-shadow: 0 4px 20px rgba(241, 196, 15, 0.3);
     }
 
+    .checkin-time {
+      margin-top: 15px;
+      font-size: 1.1rem;
+      color: #d1b3ff;
+      letter-spacing: 1px;
+    }
+
     @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.95); }
+      from { opacity: 0; transform: scale(0.92); }
       to { opacity: 1; transform: scale(1); }
     }
   </style>
@@ -115,6 +122,7 @@
       <div id="guestMsg" class="guest-display">
         <div class="welcome-text">WELCOME</div>
         <div id="guestName" class="guest-name"></div>
+        <div id="checkinTime" class="checkin-time"></div>
       </div>
     </div>
   </div>
@@ -122,60 +130,65 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec";
 
-    let lastFingerprint = null;
-    let resetTimer = null;
+    let lastRowIndex = null;
+    let hideTimer = null;
 
-    function displayWelcome(name) {
+    function showWelcome(name, time) {
       const defaultMsg = document.getElementById("defaultMsg");
       const guestMsg = document.getElementById("guestMsg");
       const guestName = document.getElementById("guestName");
+      const checkinTime = document.getElementById("checkinTime");
 
       guestName.innerText = name;
+      checkinTime.innerText = time ? "Checked In at " + time : "";
+
       defaultMsg.style.display = "none";
       guestMsg.style.display = "flex";
 
-      if (resetTimer) clearTimeout(resetTimer);
+      if (hideTimer) clearTimeout(hideTimer);
 
-      resetTimer = setTimeout(() => {
+      hideTimer = setTimeout(() => {
         guestMsg.style.display = "none";
         defaultMsg.style.display = "block";
-      }, 5000);
+      }, 6000);
     }
 
-    function checkLatest() {
-      const cb = 'cb_' + Date.now();
+    function fetchLatestCheckIn() {
+      const callbackName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
       const script = document.createElement('script');
 
-      window[cb] = function(data) {
-        delete window[cb];
+      window[callbackName] = function(data) {
+        delete window[callbackName];
         if (script.parentNode) script.parentNode.removeChild(script);
 
         if (data && data.status === "success" && data.name) {
-          const currentFingerprint = `${data.rowIndex}_${data.name}_${data.time}`;
+          const currentRowIndex = data.rowIndex;
 
-          if (lastFingerprint === null) {
-            lastFingerprint = currentFingerprint;
+          // Initialize baseline on first execution
+          if (lastRowIndex === null) {
+            lastRowIndex = currentRowIndex;
             return;
           }
 
-          if (currentFingerprint !== lastFingerprint) {
-            lastFingerprint = currentFingerprint;
-            displayWelcome(data.name);
+          // Trigger display update when new check-in occurs
+          if (currentRowIndex !== lastRowIndex) {
+            lastRowIndex = currentRowIndex;
+            showWelcome(data.name, data.time);
           }
         }
       };
 
-      script.src = `${SCRIPT_URL}?mode=latest&callback=${cb}&_=${Date.now()}`;
+      script.src = `${SCRIPT_URL}?mode=latest&callback=${callbackName}&cacheBust=${Date.now()}`;
       script.onerror = function() {
-        delete window[cb];
+        delete window[callbackName];
         if (script.parentNode) script.parentNode.removeChild(script);
       };
 
       document.body.appendChild(script);
     }
 
-    setInterval(checkLatest, 1500);
-    checkLatest();
+    setInterval(fetchLatestCheckIn, 1200);
+    fetchLatestCheckIn();
   </script>
 
 </body>
