@@ -76,7 +76,6 @@
       width: 100%;
     }
 
-    /* Suppress default library controls */
     #reader__dashboard, 
     #reader__status_span, 
     #reader__camera_selection,
@@ -265,7 +264,7 @@
         }
       };
 
-      script.src = `${SCRIPT_URL}?mode=search&query=${encodeURIComponent(query)}&callback=${cb}&cacheBust=${Date.now()}`;
+      script.src = `${SCRIPT_URL}?mode=search&query=${encodeURIComponent(query)}&callback=${cb}&_=${Date.now()}`;
       document.body.appendChild(script);
     }
 
@@ -285,7 +284,7 @@
         }
       };
 
-      script.src = `${SCRIPT_URL}?mode=checkin&id=${rowIndex}&callback=${cb}&cacheBust=${Date.now()}`;
+      script.src = `${SCRIPT_URL}?mode=checkin&id=${rowIndex}&callback=${cb}&_=${Date.now()}`;
       document.body.appendChild(script);
     }
 
@@ -310,7 +309,7 @@
         setTimeout(() => { isProcessingScan = false; }, 3000);
       };
 
-      scriptSearch.src = `${SCRIPT_URL}?mode=search&query=${encodeURIComponent(qrText)}&callback=${cbSearch}&cacheBust=${Date.now()}`;
+      scriptSearch.src = `${SCRIPT_URL}?mode=search&query=${encodeURIComponent(qrText)}&callback=${cbSearch}&_=${Date.now()}`;
       document.body.appendChild(scriptSearch);
     }
 
