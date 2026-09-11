@@ -55,7 +55,7 @@
     }
 
     .main-display {
-      min-height: 180px;
+      min-height: 220px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -122,28 +122,27 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec";
 
-    let lastCheckInIdentifier = null;
+    let lastFingerprint = null;
     let resetTimer = null;
 
-    function triggerWelcomeScreen(guestName) {
+    function displayWelcome(name) {
       const defaultMsg = document.getElementById("defaultMsg");
       const guestMsg = document.getElementById("guestMsg");
-      const guestNameEl = document.getElementById("guestName");
+      const guestName = document.getElementById("guestName");
 
-      guestNameEl.innerText = guestName;
+      guestName.innerText = name;
       defaultMsg.style.display = "none";
       guestMsg.style.display = "flex";
 
       if (resetTimer) clearTimeout(resetTimer);
 
-      // Show name for 5 seconds, then return to default greeting
       resetTimer = setTimeout(() => {
         guestMsg.style.display = "none";
         defaultMsg.style.display = "block";
       }, 5000);
     }
 
-    function checkLatestCheckIn() {
+    function checkLatest() {
       const cb = 'cb_' + Date.now();
       const script = document.createElement('script');
 
@@ -152,19 +151,19 @@
         if (script.parentNode) script.parentNode.removeChild(script);
 
         if (data && data.status === "success" && data.name) {
-          // Combine name and time to create a unique scan fingerprint
-          const currentIdentifier = data.name + "_" + data.time;
+          // Construct unique check-in signature
+          const currentFingerprint = `${data.rowIndex}_${data.name}_${data.time}`;
 
-          // First poll sets initial baseline without popping up a 5-second welcome for old data
-          if (lastCheckInIdentifier === null) {
-            lastCheckInIdentifier = currentIdentifier;
+          // On first load set baseline without triggering welcome banner
+          if (lastFingerprint === null) {
+            lastFingerprint = currentFingerprint;
             return;
           }
 
-          // New scan detected!
-          if (currentIdentifier !== lastCheckInIdentifier) {
-            lastCheckInIdentifier = currentIdentifier;
-            triggerWelcomeScreen(data.name);
+          // Trigger screen update on new check-in
+          if (currentFingerprint !== lastFingerprint) {
+            lastFingerprint = currentFingerprint;
+            displayWelcome(data.name);
           }
         }
       };
@@ -178,9 +177,8 @@
       document.body.appendChild(script);
     }
 
-    // Poll backend every 2 seconds
-    setInterval(checkLatestCheckIn, 2000);
-    checkLatestCheckIn();
+    setInterval(checkLatest, 1500);
+    checkLatest();
   </script>
 
 </body>
