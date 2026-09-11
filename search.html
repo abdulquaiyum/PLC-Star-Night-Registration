@@ -1,97 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PLC Star Night - Manual Guest Search</title>
+  <title>PLC Star Night - Check-In</title>
   <style>
-    * { box-sizing: border-box; }
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      background: #110826; 
-      color: #fff; 
-      margin: 0; 
-      padding: 20px; 
-    }
-    .container { max-width: 500px; margin: 0 auto; }
-    h2 { color: gold; text-align: center; margin-bottom: 20px; font-weight: 600; }
-    .search-box {
-      width: 100%;
-      padding: 16px;
-      font-size: 18px;
-      border: 2px solid #3b1d82;
-      border-radius: 12px;
-      background: #1f1140;
-      color: #fff;
-      outline: none;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-    .search-box:focus { border-color: gold; }
-    .results { margin-top: 15px; }
-    .card {
-      background: #1f1140;
-      border: 1px solid #3b1d82;
-      border-radius: 10px;
-      padding: 14px 18px;
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .card-info { flex: 1; padding-right: 10px; }
-    .card-title { font-weight: bold; font-size: 16px; color: #fff; }
-    .card-sub { font-size: 13px; color: #aaa; margin-top: 4px; }
-    .btn {
-      background: gold;
-      color: #110826;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      min-width: 100px;
-      text-align: center;
-      transition: background 0.2s;
-    }
-    .btn.checked {
-      background: #2e7d32;
-      color: #fff;
-      cursor: default;
-    }
-    #status-msg {
-      text-align: center;
-      margin-top: 15px;
-      font-weight: bold;
-      font-size: 15px;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; background: #f4f6f9; color: #333; }
+    .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto 20px; }
+    h2 { margin-bottom: 15px; color: #110826; }
+    input[type="text"], input[type="number"] { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+    button { width: 100%; padding: 12px; background: #2a115c; color: #fff; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
+    button:hover { background: #3c1a80; }
+    .result-item { border-bottom: 1px solid #eee; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
+    .result-item:last-child { border-bottom: none; }
+    .guest-info { font-size: 15px; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+    .badge-pending { background: #fff3cd; color: #856404; }
+    .badge-checked { background: #d4edda; color: #155724; }
+    .checkin-btn { width: auto; padding: 8px 16px; background: #28a745; margin-left: 10px; }
+    .checkin-btn:hover { background: #218838; }
+    .token-input { width: 100px !important; margin-bottom: 0 !important; display: inline-block; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Manual Guest Search</h2>
-    <input type="text" id="searchInput" class="search-box" placeholder="Enter EMP No or Name..." autocomplete="off">
-    <div id="results" class="results"></div>
-    <div id="status-msg"></div>
+
+  <div class="card">
+    <h2>Event Check-In</h2>
+    <input type="text" id="searchInput" placeholder="Enter Name, EMP No, or Invitee ID..." onkeyup="if(event.key==='Enter') performSearch()">
+    <button onclick="performSearch()">Search Guest</button>
+  </div>
+
+  <div class="card" id="resultsCard" style="display:none;">
+    <h2>Search Results</h2>
+    <div id="resultsContainer"></div>
   </div>
 
   <script>
     var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec';
-    var searchInput = document.getElementById('searchInput');
-    var resultsDiv = document.getElementById('results');
-    var statusMsg = document.getElementById('status-msg');
-    var debounceTimer;
 
-    searchInput.addEventListener('input', function() {
-      clearTimeout(debounceTimer);
-      var q = searchInput.value.trim();
-      if (q.length < 2) {
-        resultsDiv.innerHTML = '';
-        statusMsg.innerText = '';
-        return;
-      }
-      debounceTimer = setTimeout(function() { fetchSuggestions(q); }, 300);
-    });
+    function performSearch() {
+      var query = document.getElementById('searchInput').value.trim();
+      if (!query) return;
 
-    function fetchSuggestions(query) {
       var callbackName = 'search_cb_' + Math.round(Math.random() * 1000000);
       window[callbackName] = function(data) {
         delete window[callbackName];
@@ -100,72 +51,71 @@
       };
 
       var script = document.createElement('script');
-      script.src = BACKEND_URL + '?mode=search&q=' + encodeURIComponent(query) + '&callback=' + callbackName;
+      script.src = BACKEND_URL + '?mode=search&query=' + encodeURIComponent(query) + '&callback=' + callbackName;
       document.body.appendChild(script);
     }
 
     function renderResults(data) {
-      resultsDiv.innerHTML = '';
-      if (!data || data.length === 0) {
-        resultsDiv.innerHTML = '<p style="text-align:center; color:#aaa; margin-top:20px;">No guests found.</p>';
+      var card = document.getElementById('resultsCard');
+      var container = document.getElementById('resultsContainer');
+      container.innerHTML = '';
+      card.style.display = 'block';
+
+      if (!data.matches || data.matches.length === 0) {
+        container.innerHTML = '<p>No matching guests found.</p>';
         return;
       }
 
-      data.forEach(function(item) {
-        var card = document.createElement('div');
-        card.className = 'card';
+      data.matches.forEach(function(guest) {
+        var isChecked = guest.status === 'Checked-In';
+        var item = document.createElement('div');
+        item.className = 'result-item';
 
-        var isChecked = item.status === 'Checked In';
+        var statusBadge = isChecked 
+          ? '<span class="badge badge-checked">Checked-In (Token: ' + (guest.tokenNo || 'N/A') + ')</span>'
+          : '<span class="badge badge-pending">Pending</span>';
 
-        var cardInfo = document.createElement('div');
-        cardInfo.className = 'card-info';
+        var actionArea = isChecked ? '' : 
+          '<div>' +
+            '<input type="number" id="token_' + guest.rowIndex + '" class="token-input" min="1" max="530" placeholder="Token #"> ' +
+            '<button class="checkin-btn" onclick="executeCheckIn(' + guest.rowIndex + ')">Check-In</button>' +
+          '</div>';
 
-        var cardTitle = document.createElement('div');
-        cardTitle.className = 'card-title';
-        cardTitle.textContent = item.name || 'Unnamed Guest';
+        item.innerHTML = 
+          '<div class="guest-info">' +
+            '<strong>' + guest.name + '</strong><br>' +
+            'EMP: ' + guest.empNo + ' | ID: ' + guest.inviteeId + '<br>' +
+            statusBadge +
+          '</div>' + actionArea;
 
-        var cardSub = document.createElement('div');
-        cardSub.className = 'card-sub';
-        cardSub.textContent = 'EMP No: ' + (item.id !== undefined && item.id !== '' ? item.id : 'N/A');
-
-        cardInfo.appendChild(cardTitle);
-        cardInfo.appendChild(cardSub);
-
-        var btn = document.createElement('button');
-        btn.className = 'btn ' + (isChecked ? 'checked' : '');
-        btn.textContent = isChecked ? 'Checked In' : 'Check In';
-        btn.onclick = function() {
-          doCheckIn(item.id, btn);
-        };
-
-        card.appendChild(cardInfo);
-        card.appendChild(btn);
-        resultsDiv.appendChild(card);
+        container.appendChild(item);
       });
     }
 
-    function doCheckIn(id, btnObj) {
-      if (btnObj.classList.contains('checked')) return;
-      btnObj.innerText = 'Checking...';
+    function executeCheckIn(rowIndex) {
+      var tokenInput = document.getElementById('token_' + rowIndex);
+      var tokenVal = tokenInput ? tokenInput.value.trim() : '';
+
+      if (!tokenVal) {
+        alert('Please enter a Voting Token # (1 - 530) before checking in.');
+        return;
+      }
 
       var callbackName = 'checkin_cb_' + Math.round(Math.random() * 1000000);
-      window[callbackName] = function(res) {
+      window[callbackName] = function(data) {
         delete window[callbackName];
         if (script.parentNode) script.parentNode.removeChild(script);
-        if (res.status === 'ok' || res.status === 'duplicate') {
-          btnObj.innerText = 'Checked In';
-          btnObj.classList.add('checked');
-          statusMsg.style.color = '#4caf50';
-          statusMsg.innerText = 'Successfully checked in: ' + res.name;
+
+        if (data.status === 'success') {
+          alert('Checked in ' + data.name + ' with Token #' + data.tokenNo);
+          performSearch(); // Refresh search list
         } else {
-          btnObj.innerText = 'Retry';
-          statusMsg.style.color = '#ff5252';
-          statusMsg.innerText = 'Check-in failed. Please try again.';
+          alert('Error: ' + data.message);
         }
       };
 
       var script = document.createElement('script');
-      script.src = BACKEND_URL + '?id=' + encodeURIComponent(id) + '&callback=' + callbackName;
+      script.src = BACKEND_URL + '?mode=checkin&id=' + rowIndex + '&tokenNo=' + encodeURIComponent(tokenVal) + '&callback=' + callbackName;
       document.body.appendChild(script);
     }
   </script>
