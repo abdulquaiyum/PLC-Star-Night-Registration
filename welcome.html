@@ -67,7 +67,6 @@
       font-weight: 700;
       color: var(--text-white);
       line-height: 1.2;
-      transition: opacity 0.6s ease;
     }
 
     .guest-display {
@@ -75,7 +74,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      animation: fadeIn 0.6s ease-out;
+      animation: fadeIn 0.5s ease-out;
     }
 
     .welcome-text {
@@ -123,65 +122,65 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec";
 
-    let lastCheckInKey = null; // Set to null on initial load
+    let lastCheckInIdentifier = null;
     let resetTimer = null;
 
-    function showGuestWelcome(name) {
+    function triggerWelcomeScreen(guestName) {
       const defaultMsg = document.getElementById("defaultMsg");
       const guestMsg = document.getElementById("guestMsg");
-      const guestName = document.getElementById("guestName");
+      const guestNameEl = document.getElementById("guestName");
 
-      guestName.innerText = name;
-
+      guestNameEl.innerText = guestName;
       defaultMsg.style.display = "none";
       guestMsg.style.display = "flex";
 
       if (resetTimer) clearTimeout(resetTimer);
 
+      // Show name for 5 seconds, then return to default greeting
       resetTimer = setTimeout(() => {
         guestMsg.style.display = "none";
         defaultMsg.style.display = "block";
       }, 5000);
     }
 
-    function fetchLatestCheckIn() {
-      const callbackName = 'jsonp_welcome_' + Math.round(100000 * Math.random());
+    function checkLatestCheckIn() {
+      const cb = 'cb_' + Date.now();
       const script = document.createElement('script');
 
-      window[callbackName] = function(data) {
-        delete window[callbackName];
+      window[cb] = function(data) {
+        delete window[cb];
         if (script.parentNode) script.parentNode.removeChild(script);
 
         if (data && data.status === "success" && data.name) {
-          const currentKey = data.name + "_" + data.time;
+          // Combine name and time to create a unique scan fingerprint
+          const currentIdentifier = data.name + "_" + data.time;
 
-          // First call establishes baseline without triggering 5-sec timer
-          if (lastCheckInKey === null) {
-            lastCheckInKey = currentKey;
+          // First poll sets initial baseline without popping up a 5-second welcome for old data
+          if (lastCheckInIdentifier === null) {
+            lastCheckInIdentifier = currentIdentifier;
             return;
           }
 
-          // Trigger welcome only if a new scan occurred
-          if (currentKey !== lastCheckInKey) {
-            lastCheckInKey = currentKey;
-            showGuestWelcome(data.name);
+          // New scan detected!
+          if (currentIdentifier !== lastCheckInIdentifier) {
+            lastCheckInIdentifier = currentIdentifier;
+            triggerWelcomeScreen(data.name);
           }
         }
       };
 
-      // Added cache-busting timestamp `&_=`
-      script.src = `${SCRIPT_URL}?mode=latest&callback=${callbackName}&_=${Date.now()}`;
+      script.src = `${SCRIPT_URL}?mode=latest&callback=${cb}&_=${Date.now()}`;
       script.onerror = function() {
-        delete window[callbackName];
+        delete window[cb];
         if (script.parentNode) script.parentNode.removeChild(script);
       };
 
       document.body.appendChild(script);
     }
 
-    // Poll every 2 seconds
-    setInterval(fetchLatestCheckIn, 2000);
-    fetchLatestCheckIn();
+    // Poll backend every 2 seconds
+    setInterval(checkLatestCheckIn, 2000);
+    checkLatestCheckIn();
   </script>
 
 </body>
