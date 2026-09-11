@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome - PLC Star Night '26</title>
+  <title>QR Scanner - PLC Star Night '26</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     :root {
       --bg-purple: linear-gradient(135deg, #1b022d 0%, #2e0854 50%, #120024 100%);
       --accent-gold: #f1c40f;
-      --gold-gradient: linear-gradient(135deg, #ffe066 0%, #f1c40f 50%, #b38600 100%);
       --text-white: #ffffff;
-      --card-purple: rgba(46, 8, 84, 0.5);
+      --card-purple: rgba(46, 8, 84, 0.6);
       --border-gold: rgba(241, 196, 15, 0.3);
     }
 
@@ -28,157 +28,150 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      text-align: center;
       padding: 20px;
-      overflow: hidden;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 1.8rem;
+      color: var(--accent-gold);
     }
 
     .container {
-      max-width: 950px;
+      max-width: 500px;
       width: 100%;
       background: var(--card-purple);
-      border: 1.5px solid var(--border-gold);
-      border-radius: 24px;
-      padding: 60px 40px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 40px rgba(112, 0, 255, 0.2);
-      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-gold);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 
-    .event-title {
-      font-size: 1.4rem;
-      letter-spacing: 4px;
-      color: #d1b3ff;
-      text-transform: uppercase;
-      margin-bottom: 25px;
-      font-weight: 600;
+    #reader {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
     }
 
-    .main-display {
-      min-height: 220px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .default-title {
-      font-size: 3.5rem;
-      font-weight: 700;
-      color: var(--text-white);
-      line-height: 1.2;
-    }
-
-    .guest-display {
+    .status-card {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
       display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      animation: fadeIn 0.5s ease-out;
+      text-align: center;
+      font-weight: bold;
     }
 
-    .welcome-text {
-      font-size: 2rem;
-      font-weight: 300;
-      color: #e0ccff;
-      margin-bottom: 10px;
-      letter-spacing: 2px;
+    .success {
+      background: rgba(46, 204, 113, 0.2);
+      border: 1px solid #2ecc71;
+      color: #2ecc71;
     }
 
-    .guest-name {
-      font-size: 4rem;
-      font-weight: 800;
-      background: var(--gold-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      line-height: 1.2;
-      word-wrap: break-word;
-      text-shadow: 0 4px 20px rgba(241, 196, 15, 0.3);
+    .error {
+      background: rgba(231, 76, 60, 0.2);
+      border: 1px solid #e74c3c;
+      color: #e74c3c;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
+    .info {
+      background: rgba(52, 152, 219, 0.2);
+      border: 1px solid #3498db;
+      color: #3498db;
     }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <div class="event-title">PLC Star Night '26</div>
-    
-    <div class="main-display">
-      <div id="defaultMsg" class="default-title">
-        Welcome to PLC Star Night
-      </div>
+  <div class="header">
+    <h1>PLC Star Night '26</h1>
+    <p>QR Code Check-In Scanner</p>
+  </div>
 
-      <div id="guestMsg" class="guest-display">
-        <div class="welcome-text">WELCOME</div>
-        <div id="guestName" class="guest-name"></div>
-      </div>
-    </div>
+  <div class="container">
+    <div id="reader"></div>
+    <div id="statusCard" class="status-card"></div>
   </div>
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec";
+    let isProcessing = false;
 
-    let lastFingerprint = null;
-    let resetTimer = null;
-
-    function displayWelcome(name) {
-      const defaultMsg = document.getElementById("defaultMsg");
-      const guestMsg = document.getElementById("guestMsg");
-      const guestName = document.getElementById("guestName");
-
-      guestName.innerText = name;
-      defaultMsg.style.display = "none";
-      guestMsg.style.display = "flex";
-
-      if (resetTimer) clearTimeout(resetTimer);
-
-      resetTimer = setTimeout(() => {
-        guestMsg.style.display = "none";
-        defaultMsg.style.display = "block";
-      }, 5000);
+    function showStatus(message, type) {
+      const card = document.getElementById("statusCard");
+      card.className = "status-card " + type;
+      card.innerText = message;
+      card.style.display = "block";
     }
 
-    function checkLatest() {
-      const cb = 'cb_' + Date.now();
-      const script = document.createElement('script');
+    function processScan(qrCodeValue) {
+      if (isProcessing) return;
+      isProcessing = true;
 
-      window[cb] = function(data) {
-        delete window[cb];
-        if (script.parentNode) script.parentNode.removeChild(script);
+      showStatus("Searching for QR Code: " + qrCodeValue + "...", "info");
 
-        if (data && data.status === "success" && data.name) {
-          // Construct unique check-in signature
-          const currentFingerprint = `${data.rowIndex}_${data.name}_${data.time}`;
+      // Search backend for row corresponding to QR code
+      const cbSearch = 'cb_search_' + Date.now();
+      const scriptSearch = document.createElement('script');
 
-          // On first load set baseline without triggering welcome banner
-          if (lastFingerprint === null) {
-            lastFingerprint = currentFingerprint;
-            return;
-          }
+      window[cbSearch] = function(data) {
+        delete window[cbSearch];
+        if (scriptSearch.parentNode) scriptSearch.parentNode.removeChild(scriptSearch);
 
-          // Trigger screen update on new check-in
-          if (currentFingerprint !== lastFingerprint) {
-            lastFingerprint = currentFingerprint;
-            displayWelcome(data.name);
-          }
+        if (data.status === "success" && data.matches && data.matches.length > 0) {
+          const guest = data.matches[0];
+
+          // Found row, submit check-in
+          const cbCheckin = 'cb_checkin_' + Date.now();
+          const scriptCheckin = document.createElement('script');
+
+          window[cbCheckin] = function(res) {
+            delete window[cbCheckin];
+            if (scriptCheckin.parentNode) scriptCheckin.parentNode.removeChild(scriptCheckin);
+
+            if (res.status === "success") {
+              showStatus(`Checked In: ${res.name}`, "success");
+            } else {
+              showStatus("Check-in Error: " + res.message, "error");
+            }
+
+            setTimeout(() => {
+              isProcessing = false;
+              document.getElementById("statusCard").style.display = "none";
+            }, 3000);
+          };
+
+          scriptCheckin.src = `${SCRIPT_URL}?mode=checkin&id=${guest.rowIndex}&callback=${cbCheckin}&_=${Date.now()}`;
+          document.body.appendChild(scriptCheckin);
+
+        } else {
+          showStatus("Invitee not found in MasterSheet", "error");
+          setTimeout(() => {
+            isProcessing = false;
+            document.getElementById("statusCard").style.display = "none";
+          }, 3000);
         }
       };
 
-      script.src = `${SCRIPT_URL}?mode=latest&callback=${cb}&_=${Date.now()}`;
-      script.onerror = function() {
-        delete window[cb];
-        if (script.parentNode) script.parentNode.removeChild(script);
-      };
-
-      document.body.appendChild(script);
+      scriptSearch.src = `${SCRIPT_URL}?mode=search&query=${encodeURIComponent(qrCodeValue)}&callback=${cbSearch}&_=${Date.now()}`;
+      document.body.appendChild(scriptSearch);
     }
 
-    setInterval(checkLatest, 1500);
-    checkLatest();
+    const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+      fps: 10, 
+      qrbox: { width: 250, height: 250 } 
+    });
+
+    html5QrcodeScanner.render((decodedText) => {
+      processScan(decodedText);
+    }, (error) => {
+      // Quiet scanner errors
+    });
   </script>
 
 </body>
