@@ -76,7 +76,7 @@
       width: 100%;
     }
 
-    /* Hide default camera select dropdowns and buttons */
+    /* Suppress default library controls */
     #reader__dashboard, 
     #reader__status_span, 
     #reader__camera_selection,
@@ -115,11 +115,6 @@
       font-weight: 700;
       font-size: 1rem;
       cursor: pointer;
-      transition: transform 0.15s ease, opacity 0.15s ease;
-    }
-
-    .btn:active {
-      transform: scale(0.97);
     }
 
     .results-container {
@@ -228,9 +223,7 @@
       toast.innerText = message;
       toast.style.display = "block";
 
-      setTimeout(() => {
-        toast.style.display = "none";
-      }, 4000);
+      setTimeout(() => { toast.style.display = "none"; }, 4000);
     }
 
     function executeSearch() {
@@ -272,7 +265,7 @@
         }
       };
 
-      script.src = `${SCRIPT_URL}?mode=search&query=${encodeURIComponent(query)}&callback=${cb}&_=${Date.now()}`;
+      script.src = `${SCRIPT_URL}?mode=search&query=${encodeURIComponent(query)}&callback=${cb}&cacheBust=${Date.now()}`;
       document.body.appendChild(script);
     }
 
@@ -292,7 +285,7 @@
         }
       };
 
-      script.src = `${SCRIPT_URL}?mode=checkin&id=${rowIndex}&callback=${cb}&_=${Date.now()}`;
+      script.src = `${SCRIPT_URL}?mode=checkin&id=${rowIndex}&callback=${cb}&cacheBust=${Date.now()}`;
       document.body.appendChild(script);
     }
 
@@ -317,15 +310,14 @@
         setTimeout(() => { isProcessingScan = false; }, 3000);
       };
 
-      scriptSearch.src = `${SCRIPT_URL}?mode=search&query=${encodeURIComponent(qrText)}&callback=${cbSearch}&_=${Date.now()}`;
+      scriptSearch.src = `${SCRIPT_URL}?mode=search&query=${encodeURIComponent(qrText)}&callback=${cbSearch}&cacheBust=${Date.now()}`;
       document.body.appendChild(scriptSearch);
     }
 
     const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
       fps: 10, 
       qrbox: { width: 220, height: 220 },
-      rememberLastUsedCamera: true,
-      showTorchButtonIfSupported: true
+      rememberLastUsedCamera: true
     }, false);
 
     html5QrcodeScanner.render((decodedText) => {
