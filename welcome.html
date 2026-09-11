@@ -7,7 +7,6 @@
   <style>
     :root {
       --bg-purple: linear-gradient(135deg, #1b022d 0%, #2e0854 50%, #120024 100%);
-      --accent-gold: #f1c40f;
       --gold-gradient: linear-gradient(135deg, #ffe066 0%, #f1c40f 50%, #b38600 100%);
       --text-white: #ffffff;
       --card-purple: rgba(46, 8, 84, 0.5);
@@ -45,28 +44,33 @@
       backdrop-filter: blur(12px);
     }
 
+    /* Unified golden title at the top */
     .event-title {
-      font-size: 1.4rem;
-      letter-spacing: 4px;
-      color: #d1b3ff;
-      text-transform: uppercase;
-      margin-bottom: 25px;
-      font-weight: 600;
+      font-size: 3.5rem;
+      font-weight: 800;
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.2;
+      text-shadow: 0 4px 20px rgba(241, 196, 15, 0.3);
+      margin-bottom: 30px;
+      letter-spacing: 1px;
     }
 
     .main-display {
-      min-height: 220px;
+      min-height: 180px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
     }
 
-    .default-title {
-      font-size: 3.5rem;
-      font-weight: 700;
-      color: var(--text-white);
-      line-height: 1.2;
+    .default-subtitle {
+      font-size: 1.6rem;
+      color: #d1b3ff;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      font-weight: 500;
     }
 
     .guest-display {
@@ -77,23 +81,12 @@
       animation: fadeIn 0.4s ease-out;
     }
 
-    .welcome-text {
-      font-size: 2.2rem;
-      font-weight: 300;
-      color: #e0ccff;
-      margin-bottom: 15px;
-      letter-spacing: 2px;
-    }
-
     .guest-name {
       font-size: 4.5rem;
       font-weight: 800;
-      background: var(--gold-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--text-white);
       line-height: 1.2;
       word-wrap: break-word;
-      text-shadow: 0 4px 20px rgba(241, 196, 15, 0.3);
     }
 
     #statusIndicator {
@@ -114,15 +107,15 @@
 <body>
 
   <div class="container">
-    <div class="event-title">PLC Star Night '26</div>
+    <!-- Main gold title always present -->
+    <div class="event-title">Welcome to PLC Star Night</div>
     
     <div class="main-display">
-      <div id="defaultMsg" class="default-title">
-        Welcome to PLC Star Night
+      <div id="defaultMsg" class="default-subtitle">
+        PLC Star Night '26
       </div>
 
       <div id="guestMsg" class="guest-display">
-        <div class="welcome-text">WELCOME</div>
         <div id="guestName" class="guest-name"></div>
       </div>
     </div>
@@ -149,7 +142,7 @@
 
       if (hideTimer) clearTimeout(hideTimer);
 
-      // Display for 10 seconds (10000 ms)
+      // Display for 10 seconds before returning to default view
       hideTimer = setTimeout(() => {
         guestMsg.style.display = "none";
         defaultMsg.style.display = "block";
