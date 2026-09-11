@@ -109,12 +109,10 @@
     <div class="event-title">PLC Star Night '26</div>
     
     <div class="main-display">
-      <!-- Default view when idle -->
       <div id="defaultMsg" class="default-title">
         Welcome to PLC Star Night
       </div>
 
-      <!-- Active check-in view -->
       <div id="guestMsg" class="guest-display">
         <div class="welcome-text">WELCOME</div>
         <div id="guestName" class="guest-name"></div>
@@ -125,7 +123,7 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec";
 
-    let lastCheckInKey = "";
+    let lastCheckInKey = null; // Set to null on initial load
     let resetTimer = null;
 
     function showGuestWelcome(name) {
@@ -133,17 +131,13 @@
       const guestMsg = document.getElementById("guestMsg");
       const guestName = document.getElementById("guestName");
 
-      // Set guest name
       guestName.innerText = name;
 
-      // Switch views
       defaultMsg.style.display = "none";
       guestMsg.style.display = "flex";
 
-      // Clear any previous countdown timer
       if (resetTimer) clearTimeout(resetTimer);
 
-      // Revert back to default message after 5 seconds (5000 ms)
       resetTimer = setTimeout(() => {
         guestMsg.style.display = "none";
         defaultMsg.style.display = "block";
@@ -158,10 +152,16 @@
         delete window[callbackName];
         if (script.parentNode) script.parentNode.removeChild(script);
 
-        if (data && data.status !== "none" && data.name) {
+        if (data && data.status === "success" && data.name) {
           const currentKey = data.name + "_" + data.time;
-          
-          // Trigger welcome screen only if a new check-in is detected
+
+          // First call establishes baseline without triggering 5-sec timer
+          if (lastCheckInKey === null) {
+            lastCheckInKey = currentKey;
+            return;
+          }
+
+          // Trigger welcome only if a new scan occurred
           if (currentKey !== lastCheckInKey) {
             lastCheckInKey = currentKey;
             showGuestWelcome(data.name);
@@ -169,7 +169,8 @@
         }
       };
 
-      script.src = `${SCRIPT_URL}?mode=latest&callback=${callbackName}`;
+      // Added cache-busting timestamp `&_=`
+      script.src = `${SCRIPT_URL}?mode=latest&callback=${callbackName}&_=${Date.now()}`;
       script.onerror = function() {
         delete window[callbackName];
         if (script.parentNode) script.parentNode.removeChild(script);
@@ -178,7 +179,7 @@
       document.body.appendChild(script);
     }
 
-    // Poll backend every 2 seconds for fresh check-ins
+    // Poll every 2 seconds
     setInterval(fetchLatestCheckIn, 2000);
     fetchLatestCheckIn();
   </script>
