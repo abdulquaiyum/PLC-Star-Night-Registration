@@ -6,12 +6,12 @@
   <title>Welcome - PLC Star Night '26</title>
   <style>
     :root {
-      --bg-gradient: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
-      --card-bg: rgba(22, 27, 34, 0.85);
+      --bg-purple: linear-gradient(135deg, #1b022d 0%, #2e0854 50%, #120024 100%);
       --accent-gold: #f1c40f;
-      --text-main: #ffffff;
-      --text-sub: #8b949e;
-      --border-color: rgba(241, 196, 15, 0.3);
+      --gold-gradient: linear-gradient(135deg, #ffe066 0%, #f1c40f 50%, #b38600 100%);
+      --text-white: #ffffff;
+      --card-purple: rgba(46, 8, 84, 0.5);
+      --border-gold: rgba(241, 196, 15, 0.3);
     }
 
     * {
@@ -22,8 +22,8 @@
     }
 
     body {
-      background: var(--bg-gradient);
-      color: var(--text-main);
+      background: var(--bg-purple);
+      color: var(--text-white);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -35,85 +35,71 @@
     }
 
     .container {
-      max-width: 900px;
+      max-width: 950px;
       width: 100%;
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 20px;
-      padding: 50px 30px;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 30px rgba(241, 196, 15, 0.15);
-      backdrop-filter: blur(10px);
-      animation: fadeIn 0.8s ease-in-out;
+      background: var(--card-purple);
+      border: 1.5px solid var(--border-gold);
+      border-radius: 24px;
+      padding: 60px 40px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 40px rgba(112, 0, 255, 0.2);
+      backdrop-filter: blur(12px);
     }
 
     .event-title {
-      font-size: 1.5rem;
-      letter-spacing: 3px;
-      color: var(--accent-gold);
+      font-size: 1.4rem;
+      letter-spacing: 4px;
+      color: #d1b3ff;
       text-transform: uppercase;
-      margin-bottom: 20px;
-    }
-
-    .welcome-label {
-      font-size: 2.5rem;
-      font-weight: 300;
-      margin-bottom: 10px;
-      color: var(--text-sub);
-    }
-
-    .guest-name {
-      font-size: 3.8rem;
-      font-weight: 700;
-      color: #ffffff;
-      margin: 20px 0;
-      line-height: 1.2;
-      word-wrap: break-word;
-      min-height: 90px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    }
-
-    .details-box {
-      display: flex;
-      justify-content: center;
-      gap: 30px;
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .detail-item {
-      font-size: 1.2rem;
-      color: var(--text-sub);
-    }
-
-    .detail-item span {
-      color: var(--accent-gold);
+      margin-bottom: 25px;
       font-weight: 600;
     }
 
-    .pulse-dot {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      background-color: #2ea44f;
-      border-radius: 50%;
-      margin-right: 8px;
-      box-shadow: 0 0 8px #2ea44f;
-      animation: pulse 2s infinite;
+    .main-display {
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
-    @keyframes pulse {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 164, 79, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(46, 164, 79, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 164, 79, 0); }
+    .default-title {
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: var(--text-white);
+      line-height: 1.2;
+      transition: opacity 0.6s ease;
+    }
+
+    .guest-display {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .welcome-text {
+      font-size: 2rem;
+      font-weight: 300;
+      color: #e0ccff;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    .guest-name {
+      font-size: 4rem;
+      font-weight: 800;
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.2;
+      word-wrap: break-word;
+      text-shadow: 0 4px 20px rgba(241, 196, 15, 0.3);
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
     }
   </style>
 </head>
@@ -121,23 +107,48 @@
 
   <div class="container">
     <div class="event-title">PLC Star Night '26</div>
-    <div class="welcome-label">WELCOME</div>
     
-    <div id="guestName" class="guest-name">Waiting for guest...</div>
+    <div class="main-display">
+      <!-- Default view when idle -->
+      <div id="defaultMsg" class="default-title">
+        Welcome to PLC Star Night
+      </div>
 
-    <div class="details-box">
-      <div class="detail-item"><span class="pulse-dot"></span>Live Updates</div>
-      <div id="timeContainer" class="detail-item" style="display: none;">Time: <span id="checkInTime">--</span></div>
-      <div id="tokenContainer" class="detail-item" style="display: none;">Token #: <span id="tokenNo">--</span></div>
+      <!-- Active check-in view -->
+      <div id="guestMsg" class="guest-display">
+        <div class="welcome-text">WELCOME</div>
+        <div id="guestName" class="guest-name"></div>
+      </div>
     </div>
   </div>
 
   <script>
-    // PRE-CONFIGURED WITH YOUR APPS SCRIPT URL
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec";
 
-    let lastTime = "";
-    let lastName = "";
+    let lastCheckInKey = "";
+    let resetTimer = null;
+
+    function showGuestWelcome(name) {
+      const defaultMsg = document.getElementById("defaultMsg");
+      const guestMsg = document.getElementById("guestMsg");
+      const guestName = document.getElementById("guestName");
+
+      // Set guest name
+      guestName.innerText = name;
+
+      // Switch views
+      defaultMsg.style.display = "none";
+      guestMsg.style.display = "flex";
+
+      // Clear any previous countdown timer
+      if (resetTimer) clearTimeout(resetTimer);
+
+      // Revert back to default message after 5 seconds (5000 ms)
+      resetTimer = setTimeout(() => {
+        guestMsg.style.display = "none";
+        defaultMsg.style.display = "block";
+      }, 5000);
+    }
 
     function fetchLatestCheckIn() {
       const callbackName = 'jsonp_welcome_' + Math.round(100000 * Math.random());
@@ -148,25 +159,12 @@
         if (script.parentNode) script.parentNode.removeChild(script);
 
         if (data && data.status !== "none" && data.name) {
-          if (data.name !== lastName || data.time !== lastTime) {
-            lastName = data.name;
-            lastTime = data.time;
-
-            const nameEl = document.getElementById("guestName");
-            nameEl.style.animation = 'none';
-            nameEl.offsetHeight; // Reflow
-            nameEl.style.animation = 'fadeIn 0.5s ease-in-out';
-            nameEl.innerText = data.name;
-
-            if (data.time) {
-              document.getElementById("checkInTime").innerText = data.time;
-              document.getElementById("timeContainer").style.display = "block";
-            }
-
-            if (data.tokenNo) {
-              document.getElementById("tokenNo").innerText = data.tokenNo;
-              document.getElementById("tokenContainer").style.display = "block";
-            }
+          const currentKey = data.name + "_" + data.time;
+          
+          // Trigger welcome screen only if a new check-in is detected
+          if (currentKey !== lastCheckInKey) {
+            lastCheckInKey = currentKey;
+            showGuestWelcome(data.name);
           }
         }
       };
@@ -180,8 +178,8 @@
       document.body.appendChild(script);
     }
 
-    // Poll for updates every 3 seconds
-    setInterval(fetchLatestCheckIn, 3000);
+    // Poll backend every 2 seconds for fresh check-ins
+    setInterval(fetchLatestCheckIn, 2000);
     fetchLatestCheckIn();
   </script>
 
