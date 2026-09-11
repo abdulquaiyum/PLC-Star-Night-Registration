@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome - PLC Star Night '26</title>
+  <style>
+    :root {
+      --bg-purple: linear-gradient(135deg, #1b022d 0%, #2e0854 50%, #120024 100%);
+      --accent-gold: #f1c40f;
+      --gold-gradient: linear-gradient(135deg, #ffe066 0%, #f1c40f 50%, #b38600 100%);
+      --text-white: #ffffff;
+      --card-purple: rgba(46, 8, 84, 0.5);
+      --border-gold: rgba(241, 196, 15, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    }
+
+    body {
+      background: var(--bg-purple);
+      color: var(--text-white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .container {
+      max-width: 950px;
+      width: 100%;
+      background: var(--card-purple);
+      border: 1.5px solid var(--border-gold);
+      border-radius: 24px;
+      padding: 60px 40px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 40px rgba(112, 0, 255, 0.2);
+      backdrop-filter: blur(12px);
+    }
+
+    .event-title {
+      font-size: 1.4rem;
+      letter-spacing: 4px;
+      color: #d1b3ff;
+      text-transform: uppercase;
+      margin-bottom: 25px;
+      font-weight: 600;
+    }
+
+    .main-display {
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .default-title {
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: var(--text-white);
+      line-height: 1.2;
+    }
+
+    .guest-display {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .welcome-text {
+      font-size: 2rem;
+      font-weight: 300;
+      color: #e0ccff;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    .guest-name {
+      font-size: 4rem;
+      font-weight: 800;
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.2;
+      word-wrap: break-word;
+      text-shadow: 0 4px 20px rgba(241, 196, 15, 0.3);
+    }
+
+    .checkin-time {
+      margin-top: 15px;
+      font-size: 1.1rem;
+      color: #d1b3ff;
+      letter-spacing: 1px;
+    }
+
+    #statusIndicator {
+      position: fixed;
+      bottom: 10px;
+      left: 15px;
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.4);
+      font-family: monospace;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="event-title">PLC Star Night '26</div>
+    
+    <div class="main-display">
+      <div id="defaultMsg" class="default-title">
+        Welcome to PLC Star Night
+      </div>
+
+      <div id="guestMsg" class="guest-display">
+        <div class="welcome-text">WELCOME</div>
+        <div id="guestName" class="guest-name"></div>
+        <div id="checkinTime" class="checkin-time"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="statusIndicator">Connecting...</div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec";
+    
+    let lastCheckinId = null;
+    let hideTimer = null;
+    const statusEl = document.getElementById("statusIndicator");
+
+    function showWelcome(name, time) {
+      const defaultMsg = document.getElementById("defaultMsg");
+      const guestMsg = document.getElementById("guestMsg");
+      const guestName = document.getElementById("guestName");
+      const checkinTime = document.getElementById("checkinTime");
+
+      guestName.innerText = name;
+      checkinTime.innerText = time ? "Checked In at " + time : "";
+
+      defaultMsg.style.display = "none";
+      guestMsg.style.display = "flex";
+
+      if (hideTimer) clearTimeout(hideTimer);
+
+      hideTimer = setTimeout(() => {
+        guestMsg.style.display = "none";
+        defaultMsg.style.display = "block";
+      }, 6000);
+    }
+
+    function processResponse(data) {
+      statusEl.innerText = "Live | Sync: " + new Date().toLocaleTimeString();
+
+      if (data && data.status === "success" && data.checkinId) {
+        if (lastCheckinId === null) {
+          lastCheckinId = data.checkinId;
+          return;
+        }
+
+        if (data.checkinId !== lastCheckinId) {
+          lastCheckinId = data.checkinId;
+          showWelcome(data.name, data.time);
+        }
+      }
+    }
+
+    function fetchLatest() {
+      const callbackName = 'cb_' + Math.floor(Math.random() * 1000000);
+      const script = document.createElement('script');
+
+      window[callbackName] = function(data) {
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        processResponse(data);
+      };
+
+      script.onerror = function() {
+        statusEl.innerText = "Sync error... retrying";
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+      };
+
+      script.src = `${SCRIPT_URL}?mode=latest&callback=${callbackName}&_=${Date.now()}`;
+      document.body.appendChild(script);
+    }
+
+    setInterval(fetchLatest, 1000);
+    fetchLatest();
+  </script>
+
+</body>
+</html>
