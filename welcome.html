@@ -78,15 +78,15 @@
     }
 
     .welcome-text {
-      font-size: 2rem;
+      font-size: 2.2rem;
       font-weight: 300;
       color: #e0ccff;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
       letter-spacing: 2px;
     }
 
     .guest-name {
-      font-size: 4rem;
+      font-size: 4.5rem;
       font-weight: 800;
       background: var(--gold-gradient);
       -webkit-background-clip: text;
@@ -94,13 +94,6 @@
       line-height: 1.2;
       word-wrap: break-word;
       text-shadow: 0 4px 20px rgba(241, 196, 15, 0.3);
-    }
-
-    .checkin-time {
-      margin-top: 15px;
-      font-size: 1.1rem;
-      color: #d1b3ff;
-      letter-spacing: 1px;
     }
 
     #statusIndicator {
@@ -131,7 +124,6 @@
       <div id="guestMsg" class="guest-display">
         <div class="welcome-text">WELCOME</div>
         <div id="guestName" class="guest-name"></div>
-        <div id="checkinTime" class="checkin-time"></div>
       </div>
     </div>
   </div>
@@ -145,24 +137,23 @@
     let hideTimer = null;
     const statusEl = document.getElementById("statusIndicator");
 
-    function showWelcome(name, time) {
+    function showWelcome(name) {
       const defaultMsg = document.getElementById("defaultMsg");
       const guestMsg = document.getElementById("guestMsg");
       const guestName = document.getElementById("guestName");
-      const checkinTime = document.getElementById("checkinTime");
 
       guestName.innerText = name;
-      checkinTime.innerText = time ? "Checked In at " + time : "";
 
       defaultMsg.style.display = "none";
       guestMsg.style.display = "flex";
 
       if (hideTimer) clearTimeout(hideTimer);
 
+      // Display for 10 seconds (10000 ms)
       hideTimer = setTimeout(() => {
         guestMsg.style.display = "none";
         defaultMsg.style.display = "block";
-      }, 6000);
+      }, 10000);
     }
 
     function processResponse(data) {
@@ -176,7 +167,7 @@
 
         if (data.checkinId !== lastCheckinId) {
           lastCheckinId = data.checkinId;
-          showWelcome(data.name, data.time);
+          showWelcome(data.name);
         }
       }
     }
