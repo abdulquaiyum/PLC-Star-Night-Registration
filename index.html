@@ -3,15 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QR Scanner - PLC Star Night '26</title>
+  <title>Check-In Station - PLC Star Night '26</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     :root {
       --bg-purple: linear-gradient(135deg, #1b022d 0%, #2e0854 50%, #120024 100%);
       --accent-gold: #f1c40f;
+      --gold-gradient: linear-gradient(135deg, #ffe066 0%, #f1c40f 50%, #b38600 100%);
       --text-white: #ffffff;
       --card-purple: rgba(46, 8, 84, 0.6);
       --border-gold: rgba(241, 196, 15, 0.3);
+      --success-green: #2ecc71;
     }
 
     * {
@@ -28,61 +30,165 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px;
+      padding: 24px 16px;
     }
 
     .header {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
 
     .header h1 {
-      font-size: 1.8rem;
+      font-size: 2rem;
       color: var(--accent-gold);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .header p {
+      color: #d1b3ff;
+      font-size: 0.95rem;
+      margin-top: 4px;
     }
 
     .container {
-      max-width: 500px;
+      max-width: 650px;
       width: 100%;
       background: var(--card-purple);
       border: 1px solid var(--border-gold);
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+      backdrop-filter: blur(12px);
+    }
+
+    /* Clean Camera Wrapper */
+    .scanner-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1.5px solid var(--border-gold);
+      background: #000;
+      margin-bottom: 24px;
     }
 
     #reader {
       width: 100%;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid var(--border-gold);
     }
 
-    .status-card {
-      margin-top: 20px;
-      padding: 15px;
+    /* Hide Html5Qrcode junk elements */
+    #reader__dashboard, 
+    #reader__status_span, 
+    #reader__camera_selection,
+    #reader button {
+      display: none !important;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: 14px 18px;
       border-radius: 10px;
-      display: none;
-      text-align: center;
-      font-weight: bold;
+      border: 1px solid var(--border-gold);
+      background: rgba(18, 0, 36, 0.7);
+      color: var(--text-white);
+      font-size: 1rem;
+      outline: none;
     }
 
-    .success {
+    .search-input:focus {
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 10px rgba(241, 196, 15, 0.3);
+    }
+
+    .btn {
+      padding: 14px 24px;
+      border-radius: 10px;
+      border: none;
+      background: var(--gold-gradient);
+      color: #1b022d;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .results-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .guest-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(241, 196, 15, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .guest-info h3 {
+      font-size: 1.1rem;
+      color: var(--text-white);
+      margin-bottom: 4px;
+    }
+
+    .guest-info p {
+      font-size: 0.85rem;
+      color: #bfa8e0;
+    }
+
+    .btn-checkin {
+      background: var(--success-green);
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-checked-in {
+      background: rgba(255, 255, 255, 0.15);
+      color: #a0a0a0;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      cursor: not-allowed;
+    }
+
+    .status-toast {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 600;
+      display: none;
+    }
+
+    .toast-success {
       background: rgba(46, 204, 113, 0.2);
       border: 1px solid #2ecc71;
       color: #2ecc71;
     }
 
-    .error {
+    .toast-error {
       background: rgba(231, 76, 60, 0.2);
       border: 1px solid #e74c3c;
       color: #e74c3c;
-    }
-
-    .info {
-      background: rgba(52, 152, 219, 0.2);
-      border: 1px solid #3498db;
-      color: #3498db;
     }
   </style>
 </head>
@@ -90,33 +196,116 @@
 
   <div class="header">
     <h1>PLC Star Night '26</h1>
-    <p>QR Code Check-In Scanner</p>
+    <p>Check-In Dashboard & QR Scanner</p>
   </div>
 
   <div class="container">
-    <div id="reader"></div>
-    <div id="statusCard" class="status-card"></div>
+    <!-- Clean Camera Frame -->
+    <div class="scanner-wrapper">
+      <div id="reader"></div>
+    </div>
+
+    <!-- Manual Search -->
+    <div class="search-box">
+      <input 
+        type="text" 
+        id="searchInput" 
+        class="search-input" 
+        placeholder="Search by Name, Invitee ID, or Emp No..." 
+        onkeyup="if(event.key === 'Enter') executeSearch()"
+      />
+      <button class="btn" onclick="executeSearch()">Search</button>
+    </div>
+
+    <div id="statusToast" class="status-toast"></div>
+
+    <!-- Search Results List -->
+    <div id="resultsList" class="results-container"></div>
   </div>
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec";
-    let isProcessing = false;
+    let isProcessingScan = false;
 
-    function showStatus(message, type) {
-      const card = document.getElementById("statusCard");
-      card.className = "status-card " + type;
-      card.innerText = message;
-      card.style.display = "block";
+    function showToast(message, isSuccess = true) {
+      const toast = document.getElementById("statusToast");
+      toast.className = "status-toast " + (isSuccess ? "toast-success" : "toast-error");
+      toast.innerText = message;
+      toast.style.display = "block";
+
+      setTimeout(() => {
+        toast.style.display = "none";
+      }, 4000);
     }
 
-    function processScan(qrCodeValue) {
-      if (isProcessing) return;
-      isProcessing = true;
+    function executeSearch() {
+      const query = document.getElementById("searchInput").value.trim();
+      if (!query) return;
 
-      showStatus("Searching for QR Code: " + qrCodeValue + "...", "info");
+      const cb = 'cb_search_' + Date.now();
+      const script = document.createElement('script');
 
-      // Search backend for row corresponding to QR code
-      const cbSearch = 'cb_search_' + Date.now();
+      window[cb] = function(data) {
+        delete window[cb];
+        if (script.parentNode) script.parentNode.removeChild(script);
+
+        const list = document.getElementById("resultsList");
+        list.innerHTML = "";
+
+        if (data.status === "success" && data.matches && data.matches.length > 0) {
+          data.matches.forEach(guest => {
+            const isAlreadyIn = guest.status.toLowerCase().includes("checked");
+            const card = document.createElement("div");
+            card.className = "guest-card";
+            card.innerHTML = `
+              <div class="guest-info">
+                <h3>${guest.name}</h3>
+                <p>ID: ${guest.inviteeId} | Emp No: ${guest.empNo}</p>
+              </div>
+              <button 
+                class="${isAlreadyIn ? 'btn-checked-in' : 'btn-checkin'}" 
+                ${isAlreadyIn ? 'disabled' : ''}
+                onclick="manualCheckIn(${guest.rowIndex}, '${guest.name.replace(/'/g, "\\'")}')"
+              >
+                ${isAlreadyIn ? 'Checked In' : 'Check In'}
+              </button>
+            `;
+            list.appendChild(card);
+          });
+        } else {
+          showToast("No guests found matching: " + query, false);
+        }
+      };
+
+      script.src = `${SCRIPT_URL}?mode=search&query=${encodeURIComponent(query)}&callback=${cb}&_=${Date.now()}`;
+      document.body.appendChild(script);
+    }
+
+    function manualCheckIn(rowIndex, guestName) {
+      const cb = 'cb_checkin_' + Date.now();
+      const script = document.createElement('script');
+
+      window[cb] = function(res) {
+        delete window[cb];
+        if (script.parentNode) script.parentNode.removeChild(script);
+
+        if (res.status === "success") {
+          showToast(`Successfully Checked In: ${guestName}`, true);
+          executeSearch(); // Refresh list status
+        } else {
+          showToast("Check-in failed: " + res.message, false);
+        }
+      };
+
+      script.src = `${SCRIPT_URL}?mode=checkin&id=${rowIndex}&callback=${cb}&_=${Date.now()}`;
+      document.body.appendChild(script);
+    }
+
+    function handleCameraScan(qrText) {
+      if (isProcessingScan) return;
+      isProcessingScan = true;
+
+      const cbSearch = 'cb_qr_' + Date.now();
       const scriptSearch = document.createElement('script');
 
       window[cbSearch] = function(data) {
@@ -125,53 +314,29 @@
 
         if (data.status === "success" && data.matches && data.matches.length > 0) {
           const guest = data.matches[0];
-
-          // Found row, submit check-in
-          const cbCheckin = 'cb_checkin_' + Date.now();
-          const scriptCheckin = document.createElement('script');
-
-          window[cbCheckin] = function(res) {
-            delete window[cbCheckin];
-            if (scriptCheckin.parentNode) scriptCheckin.parentNode.removeChild(scriptCheckin);
-
-            if (res.status === "success") {
-              showStatus(`Checked In: ${res.name}`, "success");
-            } else {
-              showStatus("Check-in Error: " + res.message, "error");
-            }
-
-            setTimeout(() => {
-              isProcessing = false;
-              document.getElementById("statusCard").style.display = "none";
-            }, 3000);
-          };
-
-          scriptCheckin.src = `${SCRIPT_URL}?mode=checkin&id=${guest.rowIndex}&callback=${cbCheckin}&_=${Date.now()}`;
-          document.body.appendChild(scriptCheckin);
-
+          manualCheckIn(guest.rowIndex, guest.name);
         } else {
-          showStatus("Invitee not found in MasterSheet", "error");
-          setTimeout(() => {
-            isProcessing = false;
-            document.getElementById("statusCard").style.display = "none";
-          }, 3000);
+          showToast("Invalid QR Code: " + qrText, false);
         }
+
+        setTimeout(() => { isProcessingScan = false; }, 3000);
       };
 
-      scriptSearch.src = `${SCRIPT_URL}?mode=search&query=${encodeURIComponent(qrCodeValue)}&callback=${cbSearch}&_=${Date.now()}`;
+      scriptSearch.src = `${SCRIPT_URL}?mode=search&query=${encodeURIComponent(qrText)}&callback=${cbSearch}&_=${Date.now()}`;
       document.body.appendChild(scriptSearch);
     }
 
+    // Initialize Auto Scanner without dashboard chrome
     const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
       fps: 10, 
-      qrbox: { width: 250, height: 250 } 
-    });
+      qrbox: { width: 220, height: 220 },
+      rememberLastUsedCamera: true,
+      showTorchButtonIfSupported: true
+    }, false);
 
     html5QrcodeScanner.render((decodedText) => {
-      processScan(decodedText);
-    }, (error) => {
-      // Quiet scanner errors
-    });
+      handleCameraScan(decodedText);
+    }, () => {});
   </script>
 
 </body>
