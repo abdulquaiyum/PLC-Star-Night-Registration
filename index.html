@@ -3,140 +3,183 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PLC Event Check-In Scanner</title>
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <title>Welcome - PLC Star Night '26</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 16px; background: #f4f6f9; display: flex; flex-direction: column; align-items: center; }
-    .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); width: 100%; max-width: 420px; box-sizing: border-box; text-align: center; }
-    #reader { width: 100%; border-radius: 8px; overflow: hidden; }
-    input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
-    button { width: 100%; padding: 14px; background: #0056b3; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
-    button:disabled { background: #aaa; }
-    #result { margin-top: 15px; font-weight: bold; font-size: 15px; padding: 10px; border-radius: 6px; display: none; }
-    .success { background: #d4edda; color: #155724; display: block !important; }
-    .error { background: #f8d7da; color: #721c24; display: block !important; }
-    .info { background: #cce5ff; color: #004085; display: block !important; }
+    :root {
+      --bg-purple: linear-gradient(135deg, #1b022d 0%, #2e0854 50%, #120024 100%);
+      --accent-gold: #f1c40f;
+      --gold-gradient: linear-gradient(135deg, #ffe066 0%, #f1c40f 50%, #b38600 100%);
+      --text-white: #ffffff;
+      --card-purple: rgba(46, 8, 84, 0.5);
+      --border-gold: rgba(241, 196, 15, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    }
+
+    body {
+      background: var(--bg-purple);
+      color: var(--text-white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .container {
+      max-width: 950px;
+      width: 100%;
+      background: var(--card-purple);
+      border: 1.5px solid var(--border-gold);
+      border-radius: 24px;
+      padding: 60px 40px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 40px rgba(112, 0, 255, 0.2);
+      backdrop-filter: blur(12px);
+    }
+
+    .event-title {
+      font-size: 1.4rem;
+      letter-spacing: 4px;
+      color: #d1b3ff;
+      text-transform: uppercase;
+      margin-bottom: 25px;
+      font-weight: 600;
+    }
+
+    .main-display {
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .default-title {
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: var(--text-white);
+      line-height: 1.2;
+    }
+
+    .guest-display {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .welcome-text {
+      font-size: 2rem;
+      font-weight: 300;
+      color: #e0ccff;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    .guest-name {
+      font-size: 4rem;
+      font-weight: 800;
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.2;
+      word-wrap: break-word;
+      text-shadow: 0 4px 20px rgba(241, 196, 15, 0.3);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
   </style>
 </head>
 <body>
 
-<div class="card">
-  <h2>PLC Check-In Scanner</h2>
-  <div id="reader"></div>
-  
-  <p style="margin-top: 15px; font-size: 14px; color: #666;">Or enter ID / EPF manually:</p>
-  <input type="text" id="manualInput" placeholder="e.g. PLC-SN-137 or 137" />
-  <button id="searchBtn" onclick="manualSearch()">Search Guest</button>
+  <div class="container">
+    <div class="event-title">PLC Star Night '26</div>
+    
+    <div class="main-display">
+      <div id="defaultMsg" class="default-title">
+        Welcome to PLC Star Night
+      </div>
 
-  <div id="result"></div>
-</div>
+      <div id="guestMsg" class="guest-display">
+        <div class="welcome-text">WELCOME</div>
+        <div id="guestName" class="guest-name"></div>
+      </div>
+    </div>
+  </div>
 
-<script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec";
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyI-rC7SHYa4X0820Nif9hCl4vFchTYw_hla6ocaqiUn3ca3jjACNROoAa-FQGiBkua/exec";
 
-  let isProcessing = false;
+    let lastFingerprint = null;
+    let resetTimer = null;
 
-  function showStatus(text, type) {
-    const resDiv = document.getElementById("result");
-    resDiv.className = type;
-    resDiv.innerText = text;
-  }
+    function displayWelcome(name) {
+      const defaultMsg = document.getElementById("defaultMsg");
+      const guestMsg = document.getElementById("guestMsg");
+      const guestName = document.getElementById("guestName");
 
-  function fetchJSONP(url) {
-    return new Promise((resolve, reject) => {
-      const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+      guestName.innerText = name;
+      defaultMsg.style.display = "none";
+      guestMsg.style.display = "flex";
+
+      if (resetTimer) clearTimeout(resetTimer);
+
+      resetTimer = setTimeout(() => {
+        guestMsg.style.display = "none";
+        defaultMsg.style.display = "block";
+      }, 5000);
+    }
+
+    function checkLatest() {
+      const cb = 'cb_' + Date.now();
       const script = document.createElement('script');
-      
-      window[callbackName] = function(data) {
-        delete window[callbackName];
+
+      window[cb] = function(data) {
+        delete window[cb];
         if (script.parentNode) script.parentNode.removeChild(script);
-        resolve(data);
+
+        if (data && data.status === "success" && data.name) {
+          // Construct unique check-in signature
+          const currentFingerprint = `${data.rowIndex}_${data.name}_${data.time}`;
+
+          // On first load set baseline without triggering welcome banner
+          if (lastFingerprint === null) {
+            lastFingerprint = currentFingerprint;
+            return;
+          }
+
+          // Trigger screen update on new check-in
+          if (currentFingerprint !== lastFingerprint) {
+            lastFingerprint = currentFingerprint;
+            displayWelcome(data.name);
+          }
+        }
       };
 
-      script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+      script.src = `${SCRIPT_URL}?mode=latest&callback=${cb}&_=${Date.now()}`;
       script.onerror = function() {
-        delete window[callbackName];
+        delete window[cb];
         if (script.parentNode) script.parentNode.removeChild(script);
-        reject(new Error("Network / Script Error"));
       };
 
       document.body.appendChild(script);
-    });
-  }
-
-  function searchGuest(queryStr) {
-    if (isProcessing) return;
-    isProcessing = true;
-
-    const cleanedQuery = String(queryStr).trim();
-    showStatus("Searching for: " + cleanedQuery + "...", "info");
-
-    const searchUrl = `${SCRIPT_URL}?mode=search&query=${encodeURIComponent(cleanedQuery)}`;
-
-    fetchJSONP(searchUrl)
-      .then(res => {
-        isProcessing = false;
-        if (res.status === "success" && res.matches && res.matches.length > 0) {
-          const guest = res.matches[0];
-          
-          if (guest.status === "Checked-In") {
-            showStatus(`Already Checked-In: ${guest.name} (${guest.inviteeId})`, "error");
-          } else {
-            promptCheckIn(guest);
-          }
-        } else {
-          showStatus(`ID not found: "${cleanedQuery}"`, "error");
-        }
-      })
-      .catch(err => {
-        isProcessing = false;
-        showStatus("Connection error. Check Apps Script URL deployment.", "error");
-        console.error(err);
-      });
-  }
-
-  function promptCheckIn(guest) {
-    const tokenNo = prompt(`Found: ${guest.name}\nInvitee ID: ${guest.inviteeId}\n\nEnter Voting Token # (Optional):`);
-    if (tokenNo === null) {
-      showStatus("Check-In cancelled.", "info");
-      return;
     }
 
-    showStatus(`Checking in ${guest.name}...`, "info");
-    const checkinUrl = `${SCRIPT_URL}?mode=checkin&id=${guest.rowIndex}&tokenNo=${encodeURIComponent(tokenNo)}`;
-
-    fetchJSONP(checkinUrl)
-      .then(res => {
-        if (res.status === "success") {
-          showStatus(`SUCCESS: ${res.name} Checked-In at ${res.time}!`, "success");
-        } else {
-          showStatus(`Check-In Failed: ${res.message}`, "error");
-        }
-      })
-      .catch(err => {
-        showStatus("Error recording check-in.", "error");
-      });
-  }
-
-  function manualSearch() {
-    const val = document.getElementById("manualInput").value;
-    if (val) searchGuest(val);
-  }
-
-  function onScanSuccess(decodedText) {
-    searchGuest(decodedText);
-  }
-
-  // Automatically request rear camera on mobile devices
-  window.onload = function() {
-    const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
-      fps: 10, 
-      qrbox: 250,
-      facingMode: "environment"
-    });
-    html5QrcodeScanner.render(onScanSuccess);
-  };
-</script>
+    setInterval(checkLatest, 1500);
+    checkLatest();
+  </script>
 
 </body>
 </html>
