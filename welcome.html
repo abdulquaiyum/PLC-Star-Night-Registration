@@ -151,16 +151,13 @@
         if (script.parentNode) script.parentNode.removeChild(script);
 
         if (data && data.status === "success" && data.name) {
-          // Construct unique check-in signature
           const currentFingerprint = `${data.rowIndex}_${data.name}_${data.time}`;
 
-          // On first load set baseline without triggering welcome banner
           if (lastFingerprint === null) {
             lastFingerprint = currentFingerprint;
             return;
           }
 
-          // Trigger screen update on new check-in
           if (currentFingerprint !== lastFingerprint) {
             lastFingerprint = currentFingerprint;
             displayWelcome(data.name);
